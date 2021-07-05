@@ -17,9 +17,10 @@ const urlDatabase = {
 };
 
 //------------------------------------------------------------------------------
-// Create server
+// Create and initialize server
 
 const app = express();
+app.set("view engine", "ejs");
 
 //------------------------------------------------------------------------------
 // Set endpoints
