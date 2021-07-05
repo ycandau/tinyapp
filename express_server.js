@@ -25,7 +25,11 @@ const app = express();
 // Set endpoints
 
 app.get("/", (req, res) => {
-  res.send("Hello!");
+  res.send("Hello!\n");
+});
+
+app.get("/hello", (req, res) => {
+  res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
 
 app.get("/urls.json", (req, res) => {
