@@ -80,17 +80,17 @@ app.get('/urls/new', (req, res) => {
   res.render('urls_new');
 });
 
-app.post('/urls', (req, res) => {
-  const shortURL = generateDistinctKey(6, urlDatabase);
-  urlDatabase[shortURL] = req.body.longURL;
-  console.log(urlDatabase);
-  res.send('Ok');
-});
-
 app.get('/urls/:shortURL', (req, res) => {
   const shortURL = req.params.shortURL;
   const templateVars = { shortURL, longURL: urlDatabase[shortURL] };
   res.render('urls_show', templateVars);
+});
+
+app.post('/urls', (req, res) => {
+  const shortURL = generateDistinctKey(6, urlDatabase);
+  urlDatabase[shortURL] = req.body.longURL;
+  console.log(urlDatabase);
+  res.redirect(`/urls/${shortURL}`);
 });
 
 app.get('/urls.json', (req, res) => {
