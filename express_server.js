@@ -28,12 +28,20 @@ const generateRandomChar = () => {
   return String.fromCharCode(code);
 };
 
-const generateRandomString = (length) => () => {
+const generateRandomString = (length) => {
   let str = '';
   for (let i = 0; i < length; i++) {
     str += generateRandomChar();
   }
   return str;
+};
+
+const generateDistinctKey = (length, obj) => {
+  let key = '';
+  do {
+    key = generateRandomString(length);
+  } while (key in obj);
+  return key;
 };
 
 //------------------------------------------------------------------------------
@@ -73,7 +81,8 @@ app.get('/urls/new', (req, res) => {
 });
 
 app.post('/urls', (req, res) => {
-  console.log(req.body);
+  const shortURL = generateDistinctKey(6, urlDatabase);
+  console.log(urlDatabase);
   res.send('Ok');
 });
 
