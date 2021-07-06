@@ -82,6 +82,7 @@ app.get('/urls/new', (req, res) => {
 
 app.post('/urls', (req, res) => {
   const shortURL = generateDistinctKey(6, urlDatabase);
+  urlDatabase[shortURL] = req.body.longURL;
   console.log(urlDatabase);
   res.send('Ok');
 });
