@@ -73,12 +73,6 @@ app.get('/urls', (req, res) => {
   res.render('urls_index', templateVars);
 });
 
-// Redirect to form displaying single URL for editing
-app.get('/urls/:id/edit', (req, res) => {
-  const id = req.params.id;
-  res.redirect(`/urls/${id}`);
-});
-
 // Delete URL from list and redirect to list of all URLs
 app.post('/urls/:id/delete', (req, res) => {
   const id = req.params.id;
