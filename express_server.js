@@ -45,6 +45,11 @@ const generateDistinctKey = (length, obj) => {
   return key;
 };
 
+// @todo Improve validation with regex?
+const validateURL = (url) => {
+  return url.includes('http') ? url : `http://${url}`;
+};
+
 //------------------------------------------------------------------------------
 // Create and initialize server
 
@@ -95,15 +100,16 @@ app.get('/urls/:id', (req, res) => {
 // Update long URL on form submission
 app.post('/urls/:id', (req, res) => {
   const id = req.params.id;
-  urlDatabase[id] = req.body.longURL;
+  const validURL = validateURL(req.body.longURL);
+  urlDatabase[id] = validURL;
   res.redirect('/urls');
 });
 
 // Create new short URL on form submission
 app.post('/urls', (req, res) => {
-  // @todo validate url
   const id = generateDistinctKey(6, urlDatabase);
-  urlDatabase[id] = req.body.longURL;
+  const validURL = validateURL(req.body.longURL);
+  urlDatabase[id] = validURL;
   res.redirect(`/urls/${id}`);
 });
 
