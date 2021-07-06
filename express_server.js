@@ -8,6 +8,7 @@ const PORT = 8080;
 
 const urlDatabase = {
   a: 'http://www.example.com',
+  b: 'http://www.examplee.com',
   b2xVn2: 'http://www.lighthouselabs.ca',
   '9sm5xK': 'http://www.google.com',
 };
@@ -80,20 +81,28 @@ app.get('/urls/new', (req, res) => {
   res.render('urls_new');
 });
 
-app.get('/urls/:shortURL', (req, res) => {
-  const shortURL = req.params.shortURL;
-  const templateVars = { shortURL, longURL: urlDatabase[shortURL] };
+app.get('/urls/:id', (req, res) => {
+  const id = req.params.id;
+  const templateVars = { id, longURL: urlDatabase[id] };
   res.render('urls_show', templateVars);
 });
 
 app.post('/urls', (req, res) => {
-  const shortURL = generateDistinctKey(6, urlDatabase);
-  urlDatabase[shortURL] = req.body.longURL;
-  res.redirect(`/urls/${shortURL}`);
+  // @todo validate url
+  const id = generateDistinctKey(6, urlDatabase);
+  urlDatabase[id] = req.body.longURL;
+  res.redirect(`/urls/${id}`);
 });
 
-app.get('/u/:shortURL', (req, res) => {
-  res.redirect(urlDatabase[req.params.shortURL]);
+app.get('/u/:id', (req, res) => {
+  const id = req.params.id;
+  if (!(id in urlDatabase)) {
+    const msg = `Invalid short URL: /u/${id}`;
+    console.error(msg);
+    res.status(400).send(msg); // @todo Create separate page?
+    return;
+  }
+  res.redirect(urlDatabase[req.params.id]);
 });
 
 app.get('/urls.json', (req, res) => {
