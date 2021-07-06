@@ -100,6 +100,13 @@ app.get('/urls/:id', (req, res) => {
   res.render('urls_show', templateVars);
 });
 
+// Update long URL on form submission
+app.post('/urls/:id', (req, res) => {
+  const id = req.params.id;
+  urlDatabase[id] = req.body.longURL;
+  res.redirect('/urls');
+});
+
 // Create new short URL on form submission
 app.post('/urls', (req, res) => {
   // @todo validate url

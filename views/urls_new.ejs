@@ -15,17 +15,18 @@
       crossorigin="anonymous"
     />
 
-    <title>New URL - TinyApp Example</title>
+    <title>New URL | TinyApp</title>
   </head>
 
   <body>
     <%- include('partials/_header') %>
 
+    <!-- Form and button: Submit new long URL -->
     <main style="margin: 1em">
       <h3>Create TinyURL</h3>
       <form method="POST" action="/urls" class="form-inline">
         <div class="form-group mb-2">
-          <label for="longURL">Enter a URL:</label>
+          <label for="longURL">Enter URL:</label>
           <input
             class="form-control"
             type="text"
