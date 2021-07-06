@@ -57,9 +57,7 @@ app.set('view engine', 'ejs');
 
 const morgan = require('morgan');
 app.use(morgan('dev'));
-
-const bodyParser = require('body-parser');
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: false })); // primitives only
 
 //------------------------------------------------------------------------------
 // Set endpoints
