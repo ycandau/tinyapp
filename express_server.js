@@ -135,14 +135,14 @@ app.get('/u/:id', (req, res) => {
 
 // Login
 app.post('/login', (req, res) => {
-  console.log(req.body);
-  res.cookie('username', req.body.username);
+  if (req.body.username) {
+    res.cookie('username', req.body.username);
+  }
   res.redirect('/urls');
 });
 
 // Logout
 app.post('/logout', (req, res) => {
-  console.log(req.body);
   res.clearCookie('username');
   res.redirect('/urls');
 });
