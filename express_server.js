@@ -140,6 +140,13 @@ app.post('/login', (req, res) => {
   res.redirect('/urls');
 });
 
+// Logout
+app.post('/logout', (req, res) => {
+  console.log(req.body);
+  res.clearCookie('username');
+  res.redirect('/urls');
+});
+
 app.get('/hello', (req, res) => {
   res.send('<html><body>Hello <b>World</b></body></html>\n');
 });
