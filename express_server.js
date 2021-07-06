@@ -13,6 +13,30 @@ const urlDatabase = {
 };
 
 //------------------------------------------------------------------------------
+// Helper functions
+
+const generateRandomChar = () => {
+  const n = (Math.random() * 62) >> 0;
+  const code =
+    n < 26
+      ? n + 65 // uppercase
+      : n < 52
+      ? n + 71 // lowercase
+      : n < 62
+      ? n - 4 // digits
+      : 95; // default, never set
+  return String.fromCharCode(code);
+};
+
+const generateRandomString = (length) => () => {
+  let str = '';
+  for (let i = 0; i < length; i++) {
+    str += generateRandomChar();
+  }
+  return str;
+};
+
+//------------------------------------------------------------------------------
 // Create and initialize server
 
 const express = require('express');
@@ -67,5 +91,7 @@ app.get('/urls.json', (req, res) => {
 // Start listening
 
 app.listen(PORT, () => {
+  console.log('--------------------------------');
   console.log(`Example app listening on port ${PORT}!`);
+  console.log('--------------------------------');
 });
