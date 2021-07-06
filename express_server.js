@@ -64,29 +64,37 @@ app.use(bodyParser.urlencoded({ extended: true }));
 //------------------------------------------------------------------------------
 // Set endpoints
 
+// Root
 app.get('/', (req, res) => {
   res.send('Hello!\n');
 });
 
-app.get('/hello', (req, res) => {
-  res.send('<html><body>Hello <b>World</b></body></html>\n');
-});
-
+// Display list of all URLs
 app.get('/urls', (req, res) => {
   const templateVars = { urls: urlDatabase };
   res.render('urls_index', templateVars);
 });
 
+// Delete URL from list
+app.post('/urls/:id/delete', (req, res) => {
+  const id = req.params.id;
+  delete urlDatabase[id];
+  res.redirect('/urls');
+});
+
+// Form to create new URL
 app.get('/urls/new', (req, res) => {
   res.render('urls_new');
 });
 
+// Display single URL
 app.get('/urls/:id', (req, res) => {
   const id = req.params.id;
   const templateVars = { id, longURL: urlDatabase[id] };
   res.render('urls_show', templateVars);
 });
 
+// Create new URL on form submission
 app.post('/urls', (req, res) => {
   // @todo validate url
   const id = generateDistinctKey(6, urlDatabase);
@@ -94,6 +102,7 @@ app.post('/urls', (req, res) => {
   res.redirect(`/urls/${id}`);
 });
 
+// Redirect long URL to short URL
 app.get('/u/:id', (req, res) => {
   const id = req.params.id;
   if (!(id in urlDatabase)) {
@@ -103,6 +112,10 @@ app.get('/u/:id', (req, res) => {
     return;
   }
   res.redirect(urlDatabase[req.params.id]);
+});
+
+app.get('/hello', (req, res) => {
+  res.send('<html><body>Hello <b>World</b></body></html>\n');
 });
 
 app.get('/urls.json', (req, res) => {
