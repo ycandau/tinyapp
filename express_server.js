@@ -22,6 +22,9 @@ app.set('view engine', 'ejs');
 //------------------------------------------------------------------------------
 // Middleware
 
+const morgan = require('morgan');
+app.use(morgan('dev'));
+
 const bodyParser = require('body-parser');
 app.use(bodyParser.urlencoded({ extended: true }));
 
