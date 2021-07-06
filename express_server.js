@@ -2,11 +2,6 @@
 // express_server.js
 
 //------------------------------------------------------------------------------
-// Require modules
-
-const express = require('express');
-
-//------------------------------------------------------------------------------
 // Set constants
 
 const PORT = 8080;
@@ -20,8 +15,15 @@ const urlDatabase = {
 //------------------------------------------------------------------------------
 // Create and initialize server
 
+const express = require('express');
 const app = express();
 app.set('view engine', 'ejs');
+
+//------------------------------------------------------------------------------
+// Middleware
+
+const bodyParser = require('body-parser');
+app.use(bodyParser.urlencoded({ extended: true }));
 
 //------------------------------------------------------------------------------
 // Set endpoints
@@ -41,6 +43,11 @@ app.get('/urls', (req, res) => {
 
 app.get('/urls/new', (req, res) => {
   res.render('urls_new');
+});
+
+app.post('/urls', (req, res) => {
+  console.log(req.body);
+  res.send('Ok');
 });
 
 app.get('/urls/:shortURL', (req, res) => {
