@@ -58,10 +58,14 @@ const app = express();
 app.set('view engine', 'ejs');
 
 //------------------------------------------------------------------------------
-// Middleware
+// Use middleware
 
 const morgan = require('morgan');
 app.use(morgan('dev'));
+
+const cookieParser = require('cookie-parser');
+app.use(cookieParser());
+
 app.use(express.urlencoded({ extended: false })); // primitives only
 
 //------------------------------------------------------------------------------
@@ -74,7 +78,8 @@ app.get('/', (req, res) => {
 
 // Render page with list of all URLs
 app.get('/urls', (req, res) => {
-  const templateVars = { urls: urlDatabase };
+  const username = req.cookies.username;
+  const templateVars = { urls: urlDatabase, username };
   res.render('urls_index', templateVars);
 });
 
@@ -87,13 +92,16 @@ app.post('/urls/:id/delete', (req, res) => {
 
 // Render page to create new URL
 app.get('/urls/new', (req, res) => {
-  res.render('urls_new');
+  const username = req.cookies.username;
+  const templateVars = { username };
+  res.render('urls_new', templateVars);
 });
 
 // Render page with single URL for editing
 app.get('/urls/:id', (req, res) => {
   const id = req.params.id;
-  const templateVars = { id, longURL: urlDatabase[id] };
+  const username = req.cookies.username;
+  const templateVars = { id, longURL: urlDatabase[id], username };
   res.render('urls_show', templateVars);
 });
 
@@ -123,6 +131,13 @@ app.get('/u/:id', (req, res) => {
     return;
   }
   res.redirect(urlDatabase[req.params.id]);
+});
+
+// Login
+app.post('/login', (req, res) => {
+  console.log(req.body);
+  res.cookie('username', req.body.username);
+  res.redirect('/urls');
 });
 
 app.get('/hello', (req, res) => {
