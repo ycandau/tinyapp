@@ -69,38 +69,38 @@ app.get('/', (req, res) => {
   res.send('Hello!\n');
 });
 
-// Display list of all URLs
+// Render page with list of all URLs
 app.get('/urls', (req, res) => {
   const templateVars = { urls: urlDatabase };
   res.render('urls_index', templateVars);
 });
 
-// Redirect to form displaying single URL
+// Redirect to form displaying single URL for editing
 app.get('/urls/:id/edit', (req, res) => {
   const id = req.params.id;
   res.redirect(`/urls/${id}`);
 });
 
-// Delete URL from list
+// Delete URL from list and redirect to list of all URLs
 app.post('/urls/:id/delete', (req, res) => {
   const id = req.params.id;
   delete urlDatabase[id];
   res.redirect('/urls');
 });
 
-// Form to create new URL
+// Render page to create new URL
 app.get('/urls/new', (req, res) => {
   res.render('urls_new');
 });
 
-// Display single URL
+// Render page with single URL for editing
 app.get('/urls/:id', (req, res) => {
   const id = req.params.id;
   const templateVars = { id, longURL: urlDatabase[id] };
   res.render('urls_show', templateVars);
 });
 
-// Create new URL on form submission
+// Create new short URL on form submission
 app.post('/urls', (req, res) => {
   // @todo validate url
   const id = generateDistinctKey(6, urlDatabase);
