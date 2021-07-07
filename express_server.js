@@ -2,7 +2,7 @@
 // express_server.js
 
 //------------------------------------------------------------------------------
-// Set constants
+// Constants and simulated databases
 
 const PORT = 8080;
 
@@ -11,6 +11,19 @@ const urlDatabase = {
   b: 'http://www.examplee.com',
   b2xVn2: 'http://www.lighthouselabs.ca',
   '9sm5xK': 'http://www.google.com',
+};
+
+const users = {
+  u1: {
+    id: 'u1',
+    email: 'rfripp@example.com',
+    password: 'thrak',
+  },
+  u2: {
+    id: 'u2',
+    email: 'sreich@example.com',
+    password: '18musicians',
+  },
 };
 
 //------------------------------------------------------------------------------
@@ -37,7 +50,7 @@ const generateRandomString = (length) => {
   return str;
 };
 
-const generateDistinctKey = (length, obj) => {
+const generateUniqueKey = (length, obj) => {
   let key = '';
   do {
     key = generateRandomString(length);
@@ -115,7 +128,7 @@ app.post('/urls/:id', (req, res) => {
 
 // Create new short URL on form submission
 app.post('/urls', (req, res) => {
-  const id = generateDistinctKey(6, urlDatabase);
+  const id = generateUniqueKey(6, urlDatabase);
   const validURL = validateURL(req.body.longURL);
   urlDatabase[id] = validURL;
   res.redirect(`/urls/${id}`);
@@ -147,10 +160,21 @@ app.post('/logout', (req, res) => {
   res.redirect('/urls');
 });
 
-// Register
+// Render registration form
 app.get('/register', (req, res) => {
   res.render('register');
 });
+
+// Register user
+app.post('/register', (req, res) => {
+  const id = generateUniqueKey(6, users);
+  const { email, password } = req.body;
+  users[id] = { id, email, password };
+  res.cookie('user_id', id);
+  res.redirect('/urls');
+});
+
+//------------------------------------------------------------------------------
 
 app.get('/hello', (req, res) => {
   res.send('<html><body>Hello <b>World</b></body></html>\n');
