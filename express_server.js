@@ -1,10 +1,11 @@
 //==============================================================================
 // express_server.js
+//==============================================================================
 
 //------------------------------------------------------------------------------
 // Constants and simulated databases
 
-const PORT = 8080;
+const port = 8080;
 
 const urlDatabase = {
   a: 'http://www.example.com',
@@ -23,6 +24,11 @@ const users = {
     id: 'u2',
     email: 'sreich@example.com',
     password: '18musicians',
+  },
+  u3: {
+    id: 'u3',
+    email: 'a@b',
+    password: 'abc',
   },
 };
 
@@ -63,14 +69,28 @@ const validateURL = (url) => {
   return url.includes('http') ? url : `http://${url}`;
 };
 
-// Get the user object from a request
-const getCurrentUser = (req) =>
-  req && req.cookies && req.cookies.user_id && req.cookies.user_id in users
+/**
+ * Get the current user from the cookies included in a request.
+ *
+ * @param {object} req The request.
+ * @param {object} users Information on all registered users.
+ * @return {(object|null)} A user object if found, null otherwise.
+ */
+const getUserFromCookies = (req, users) =>
+  req.cookies && req.cookies.user_id && req.cookies.user_id in users
     ? users[req.cookies.user_id]
-    : {};
+    : null;
 
-const emailIsRegistered = (email, users) =>
-  Object.values(users).filter((user) => user.email === email).length > 0;
+/**
+ * Look for a user by email.
+ * Assumes that there are no duplicate emails in the database.
+ *
+ * @param {string} email The email of the user.
+ * @param {object} users Information on all registered users.
+ * @return {(object|null)} A user object if found, null otherwise.
+ */
+const findUserFromEmail = (email, users) =>
+  Object.values(users).filter((user) => user.email === email)[0] || null;
 
 //------------------------------------------------------------------------------
 // Create and initialize server
@@ -93,49 +113,33 @@ app.use(express.urlencoded({ extended: false })); // primitives only
 //------------------------------------------------------------------------------
 // Set endpoints
 
-// Root
+// GET / => Home page
 app.get('/', (req, res) => {
   res.send('Hello!\n');
 });
 
-// Render page with list of all URLs
+// GET /urls => Display list of all stored URLs
 app.get('/urls', (req, res) => {
   console.log(users);
-  const user = getCurrentUser(req);
+  const user = getUserFromCookies(req, users);
   const templateVars = { urls: urlDatabase, user };
   res.render('urls_index', templateVars);
 });
 
-// Delete URL from list and redirect to list of all URLs
+// POST /urls/:id/delete => Delete URL from stored list
 app.post('/urls/:id/delete', (req, res) => {
   const id = req.params.id;
   delete urlDatabase[id];
   res.redirect('/urls');
 });
 
-// Render page to create new URL
+// GET /urls/new => Page to create new URL
 app.get('/urls/new', (req, res) => {
-  const user = getCurrentUser(req);
+  const user = getUserFromCookies(req, users);
   res.render('urls_new', { user });
 });
 
-// Render page with single URL for editing
-app.get('/urls/:id', (req, res) => {
-  const id = req.params.id;
-  const user = getCurrentUser(req);
-  const templateVars = { id, longURL: urlDatabase[id], user };
-  res.render('urls_show', templateVars);
-});
-
-// Update long URL on form submission
-app.post('/urls/:id', (req, res) => {
-  const id = req.params.id;
-  const validURL = validateURL(req.body.longURL);
-  urlDatabase[id] = validURL;
-  res.redirect('/urls');
-});
-
-// Create new short URL on form submission
+// POST /urls => Store new URL after creation
 app.post('/urls', (req, res) => {
   const id = generateUniqueKey(6, urlDatabase);
   const validURL = validateURL(req.body.longURL);
@@ -143,7 +147,23 @@ app.post('/urls', (req, res) => {
   res.redirect(`/urls/${id}`);
 });
 
-// Redirect long URL to short URL
+// GET /urls/:id => Page to edit single URL
+app.get('/urls/:id', (req, res) => {
+  const id = req.params.id;
+  const user = getUserFromCookies(req, users);
+  const templateVars = { id, longURL: urlDatabase[id], user };
+  res.render('urls_show', templateVars);
+});
+
+// POST /urls/:id => Update stored URL after editing
+app.post('/urls/:id', (req, res) => {
+  const id = req.params.id;
+  const validURL = validateURL(req.body.longURL);
+  urlDatabase[id] = validURL;
+  res.redirect('/urls');
+});
+
+// GET /u/:id => Redirect short URL to long URL
 app.get('/u/:id', (req, res) => {
   const id = req.params.id;
   if (!(id in urlDatabase)) {
@@ -155,66 +175,68 @@ app.get('/u/:id', (req, res) => {
   res.redirect(urlDatabase[req.params.id]);
 });
 
-// GET /login: Render login page
-app.get('/login', (req, res) => {
-  const user = getCurrentUser(req);
-  res.render('login', { user });
-});
-
-// POST /login: On login form submission
-app.post('/login', (req, res) => {
-  if (req.body.username) {
-    res.cookie('username', req.body.username);
-  }
-  res.redirect('/urls');
-});
-
-// POST /logout: On logout button submission
-app.post('/logout', (req, res) => {
-  res.clearCookie('username');
-  res.redirect('/urls');
-});
-
-// GET /register: Render registration page
+// GET /register => Registration page
 app.get('/register', (req, res) => {
-  const user = getCurrentUser(req);
+  const user = getUserFromCookies(req, users);
+  if (user) {
+    return res.redirect('/urls'); // already logged in
+  }
   res.render('register', { user });
 });
 
-// POST /register: On registration form submission
+// GET /login => Login page
+app.get('/login', (req, res) => {
+  const user = getUserFromCookies(req, users);
+  if (user) {
+    return res.redirect('/urls'); // already logged in
+  }
+  res.render('login', { user });
+});
+
+// POST /register => Register user (400 on failure)
 app.post('/register', (req, res) => {
-  // Check validity
   const { email, password } = req.body;
   if (!email || !password) {
-    return res.status(400).send(`Invalid registration entry:<br />
+    return res.status(400).send(`Invalid registration input:<br />
       Email or password is empty`);
   }
-  if (emailIsRegistered(email, users)) {
-    return res.status(400).send(`Invalid registration entry:<br />
+  if (findUserFromEmail(email, users)) {
+    return res.status(400).send(`Invalid registration input:<br />
       Email already registred`);
   }
-  // Register
   const id = generateUniqueKey(6, users);
   users[id] = { id, email, password };
   res.cookie('user_id', id);
   res.redirect('/urls');
 });
 
-//------------------------------------------------------------------------------
-
-app.get('/hello', (req, res) => {
-  res.send('<html><body>Hello <b>World</b></body></html>\n');
+// POST /login => Log user in (403 on failure)
+app.post('/login', (req, res) => {
+  const { email, password } = req.body;
+  const user = findUserFromEmail(email, users);
+  if (!user) {
+    return res.status(403).send(`Invalid login input:<br />
+      No registered user with that email`);
+  }
+  if (password !== user.password) {
+    return res.status(403).send(`Invalid login input:<br />
+      Incorrect password`);
+  }
+  res.cookie('user_id', user.id);
+  res.redirect('/urls');
 });
 
-app.get('/urls.json', (req, res) => {
-  res.json(urlDatabase);
+// POST /logout => Log user out
+app.post('/logout', (req, res) => {
+  res.clearCookie('user_id');
+  res.redirect('/urls');
 });
 
 //------------------------------------------------------------------------------
 // Start listening
 
-app.listen(PORT, () => {
-  console.log('--------------------------------');
-  console.log(`Example app listening on port ${PORT}!`);
-  console.log('--------------------------------');
+app.listen(port, () => {
+  console.log('------------------------------');
+  console.log(`TinyApp listening on port ${port}`);
+  console.log('------------------------------');
 });

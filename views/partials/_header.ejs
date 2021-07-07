@@ -14,28 +14,24 @@
     </button>
     <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
       <div class="navbar-nav">
-        <a class="nav-item nav-link" href="/urls">My URLs</a>
-        <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
+        <a href="/urls" class="nav-item nav-link">My URLs</a>
+        <a href="/urls/new" class="nav-item nav-link">Create New URL</a>
       </div>
     </div>
 
-    <% if (!user.email) { %>
-    <div class="btn-group mr-2">
-      <a href="/login">
-        <button type="submit" class="btn btn-primary">
-          <span class="fa fa-sign-in fa-lg"></span></button
-      ></a>
-    </div>
-    <div class="btn-group mr-2">
-      <a href="/register">
-        <button type="submit" class="btn btn-primary">
-          <span class="fa fa-user-plus fa-lg"></span></button
-      ></a>
+    <% if (!user) { %>
+    <div class="navbar-nav">
+      <a href="/login" class="nav-item nav-link">Login</a>
+      <a href="/register" class="nav-item nav-link">Register</a>
     </div>
     <% } else { %>
-    <button type="submit" class="btn btn-outline-primary">
-      <span class="fa fa-sign-out fa-lg"></span>
-    </button>
+    <form method="POST" action="/logout">
+      <label>Logged in as: <%= user.email %>&nbsp;</label>
+      <button type="submit" class="btn btn-primary">
+        Logout
+        <!-- <span class="fa fa-sign-out fa-lg"></span> -->
+      </button>
+    </form>
     <% } %>
   </nav>
 </header>
