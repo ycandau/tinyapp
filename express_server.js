@@ -155,7 +155,13 @@ app.get('/u/:id', (req, res) => {
   res.redirect(urlDatabase[req.params.id]);
 });
 
-// Login
+// GET /login: Render login page
+app.get('/login', (req, res) => {
+  const user = getCurrentUser(req);
+  res.render('login', { user });
+});
+
+// POST /login: On login form submission
 app.post('/login', (req, res) => {
   if (req.body.username) {
     res.cookie('username', req.body.username);
@@ -163,20 +169,21 @@ app.post('/login', (req, res) => {
   res.redirect('/urls');
 });
 
-// Logout
+// POST /logout: On logout button submission
 app.post('/logout', (req, res) => {
   res.clearCookie('username');
   res.redirect('/urls');
 });
 
-// Render registration form
+// GET /register: Render registration page
 app.get('/register', (req, res) => {
-  res.render('register');
+  const user = getCurrentUser(req);
+  res.render('register', { user });
 });
 
-// Register user
+// POST /register: On registration form submission
 app.post('/register', (req, res) => {
-  console.log(users);
+  // Check validity
   const { email, password } = req.body;
   if (!email || !password) {
     return res.status(400).send(`Invalid registration entry:<br />
@@ -186,7 +193,7 @@ app.post('/register', (req, res) => {
     return res.status(400).send(`Invalid registration entry:<br />
       Email already registred`);
   }
-
+  // Register
   const id = generateUniqueKey(6, users);
   users[id] = { id, email, password };
   res.cookie('user_id', id);
