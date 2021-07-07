@@ -63,11 +63,14 @@ const validateURL = (url) => {
   return url.includes('http') ? url : `http://${url}`;
 };
 
-// Get the user object from an id
+// Get the user object from a request
 const getCurrentUser = (req) =>
   req && req.cookies && req.cookies.user_id && req.cookies.user_id in users
     ? users[req.cookies.user_id]
     : {};
+
+const emailIsRegistered = (email, users) =>
+  Object.values(users).filter((user) => user.email === email).length > 0;
 
 //------------------------------------------------------------------------------
 // Create and initialize server
@@ -97,6 +100,7 @@ app.get('/', (req, res) => {
 
 // Render page with list of all URLs
 app.get('/urls', (req, res) => {
+  console.log(users);
   const user = getCurrentUser(req);
   const templateVars = { urls: urlDatabase, user };
   res.render('urls_index', templateVars);
@@ -172,8 +176,18 @@ app.get('/register', (req, res) => {
 
 // Register user
 app.post('/register', (req, res) => {
-  const id = generateUniqueKey(6, users);
+  console.log(users);
   const { email, password } = req.body;
+  if (!email || !password) {
+    return res.status(400).send(`Invalid registration entry:<br />
+      Email or password is empty`);
+  }
+  if (emailIsRegistered(email, users)) {
+    return res.status(400).send(`Invalid registration entry:<br />
+      Email already registred`);
+  }
+
+  const id = generateUniqueKey(6, users);
   users[id] = { id, email, password };
   res.cookie('user_id', id);
   res.redirect('/urls');
