@@ -63,6 +63,12 @@ const validateURL = (url) => {
   return url.includes('http') ? url : `http://${url}`;
 };
 
+// Get the user object from an id
+const getCurrentUser = (req) =>
+  req && req.cookies && req.cookies.user_id && req.cookies.user_id in users
+    ? users[req.cookies.user_id]
+    : {};
+
 //------------------------------------------------------------------------------
 // Create and initialize server
 
@@ -91,8 +97,8 @@ app.get('/', (req, res) => {
 
 // Render page with list of all URLs
 app.get('/urls', (req, res) => {
-  const username = req.cookies.username;
-  const templateVars = { urls: urlDatabase, username };
+  const user = getCurrentUser(req);
+  const templateVars = { urls: urlDatabase, user };
   res.render('urls_index', templateVars);
 });
 
@@ -105,16 +111,15 @@ app.post('/urls/:id/delete', (req, res) => {
 
 // Render page to create new URL
 app.get('/urls/new', (req, res) => {
-  const username = req.cookies.username;
-  const templateVars = { username };
-  res.render('urls_new', templateVars);
+  const user = getCurrentUser(req);
+  res.render('urls_new', { user });
 });
 
 // Render page with single URL for editing
 app.get('/urls/:id', (req, res) => {
   const id = req.params.id;
-  const username = req.cookies.username;
-  const templateVars = { id, longURL: urlDatabase[id], username };
+  const user = getCurrentUser(req);
+  const templateVars = { id, longURL: urlDatabase[id], user };
   res.render('urls_show', templateVars);
 });
 
