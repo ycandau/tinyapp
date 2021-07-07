@@ -92,6 +92,23 @@ const getUserFromCookies = (req, users) =>
 const findUserFromEmail = (email, users) =>
   Object.values(users).filter((user) => user.email === email)[0] || null;
 
+/**
+ * Send an error message in return to an invalid request.
+ *
+ * @param {object} req The request.
+ * @param {object} res The response.
+ * @param {number} code The status code to send back.
+ * @param {string} msg A message describing the issue.
+ */
+const error = (req, res, code, msg) =>
+  res.status(code).send(`
+    Invalid request:<br />
+    Method: ${req.method}<br />
+    Action: ${req.originalUrl}<br />
+    Status code: ${code}<br />
+    Cause: ${msg}<br />
+  `);
+
 //------------------------------------------------------------------------------
 // Create and initialize server
 
@@ -136,11 +153,18 @@ app.post('/urls/:id/delete', (req, res) => {
 // GET /urls/new => Page to create new URL
 app.get('/urls/new', (req, res) => {
   const user = getUserFromCookies(req, users);
+  if (!user) {
+    return res.redirect('/login');
+  }
   res.render('urls_new', { user });
 });
 
 // POST /urls => Store new URL after creation
 app.post('/urls', (req, res) => {
+  const user = getUserFromCookies(req, users);
+  if (!user) {
+    return error(req, res, 403, 'User not logged in');
+  }
   const id = generateUniqueKey(6, urlDatabase);
   const validURL = validateURL(req.body.longURL);
   urlDatabase[id] = validURL;
@@ -167,10 +191,7 @@ app.post('/urls/:id', (req, res) => {
 app.get('/u/:id', (req, res) => {
   const id = req.params.id;
   if (!(id in urlDatabase)) {
-    const msg = `Invalid short URL: /u/${id}`;
-    console.error(msg);
-    res.status(400).send(msg); // @todo Create separate page?
-    return;
+    return error(req, res, 400, 'Short URL does not exist');
   }
   res.redirect(urlDatabase[req.params.id]);
 });
@@ -179,7 +200,7 @@ app.get('/u/:id', (req, res) => {
 app.get('/register', (req, res) => {
   const user = getUserFromCookies(req, users);
   if (user) {
-    return res.redirect('/urls'); // already logged in
+    return res.redirect('/urls');
   }
   res.render('register', { user });
 });
@@ -188,7 +209,7 @@ app.get('/register', (req, res) => {
 app.get('/login', (req, res) => {
   const user = getUserFromCookies(req, users);
   if (user) {
-    return res.redirect('/urls'); // already logged in
+    return res.redirect('/urls');
   }
   res.render('login', { user });
 });
@@ -197,12 +218,10 @@ app.get('/login', (req, res) => {
 app.post('/register', (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) {
-    return res.status(400).send(`Invalid registration input:<br />
-      Email or password is empty`);
+    return error(req, res, 400, 'Email or password is empty');
   }
   if (findUserFromEmail(email, users)) {
-    return res.status(400).send(`Invalid registration input:<br />
-      Email already registred`);
+    return error(req, res, 400, 'Email already registred');
   }
   const id = generateUniqueKey(6, users);
   users[id] = { id, email, password };
@@ -215,12 +234,10 @@ app.post('/login', (req, res) => {
   const { email, password } = req.body;
   const user = findUserFromEmail(email, users);
   if (!user) {
-    return res.status(403).send(`Invalid login input:<br />
-      No registered user with that email`);
+    return error(req, res, 403, 'Email not registered');
   }
   if (password !== user.password) {
-    return res.status(403).send(`Invalid login input:<br />
-      Incorrect password`);
+    return error(req, res, 403, 'Incorrect password');
   }
   res.cookie('user_id', user.id);
   res.redirect('/urls');
