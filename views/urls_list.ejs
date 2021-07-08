@@ -37,17 +37,21 @@
           </tr>
         </thead>
         <tbody>
-          <% for(const url in urls) { %>
+          <% for (const {shortURL, longURL} of urls) { %>
           <tr>
             <!-- Short URL -->
-            <td><a href="/u/<%= url %>" target="_blank"><%= url %></a></td>
+            <td><div><%= shortURL %></div></td>
             <!-- Long URL -->
             <td>
-              <a href="<%= urls[url] %>" target="_blank"><%= urls[url] %></a>
+              <a href="<%= longURL %>" target="_blank"><%= longURL %></a>
             </td>
             <!-- Button: Redirect to edit URL -->
             <td>
-              <form method="GET" action="/urls/<%= url %>" class="form-inline">
+              <form
+                method="GET"
+                action="/urls/<%= shortURL %>"
+                class="form-inline"
+              >
                 <button type="submit" class="btn btn-outline-success">
                   Edit
                 </button>
@@ -57,7 +61,7 @@
             <td>
               <form
                 method="POST"
-                action="/urls/<%= url %>/delete"
+                action="/urls/<%= shortURL %>/delete"
                 class="form-inline"
               >
                 <button type="submit" class="btn btn-outline-danger">

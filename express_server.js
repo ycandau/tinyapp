@@ -8,10 +8,21 @@
 const port = 8080;
 
 const urlDatabase = {
-  a: 'http://www.example.com',
-  b: 'http://www.examplee.com',
-  b2xVn2: 'http://www.lighthouselabs.ca',
-  '9sm5xK': 'http://www.google.com',
+  a: {
+    shortURL: 'a',
+    longURL: 'http://www.example.com',
+    userID: 'u1',
+  },
+  b: {
+    shortURL: 'b',
+    longURL: 'http://www.google.com',
+    userID: 'u1',
+  },
+  c: {
+    shortURL: 'c',
+    longURL: 'http://www.lighthouselabs.ca',
+    userID: 'u1',
+  },
 };
 
 const users = {
@@ -137,16 +148,15 @@ app.get('/', (req, res) => {
 
 // GET /urls => Display list of all stored URLs
 app.get('/urls', (req, res) => {
-  console.log(users);
   const user = getUserFromCookies(req, users);
-  const templateVars = { urls: urlDatabase, user };
-  res.render('urls_index', templateVars);
+  const urls = Object.values(urlDatabase);
+  res.render('urls_list', { urls, user });
 });
 
-// POST /urls/:id/delete => Delete URL from stored list
-app.post('/urls/:id/delete', (req, res) => {
-  const id = req.params.id;
-  delete urlDatabase[id];
+// POST /urls/:shortURL/delete => Delete URL from stored list
+app.post('/urls/:shortURL/delete', (req, res) => {
+  const shortURL = req.params.shortURL;
+  delete urlDatabase[shortURL];
   res.redirect('/urls');
 });
 
@@ -165,35 +175,35 @@ app.post('/urls', (req, res) => {
   if (!user) {
     return error(req, res, 403, 'User not logged in');
   }
-  const id = generateUniqueKey(6, urlDatabase);
-  const validURL = validateURL(req.body.longURL);
-  urlDatabase[id] = validURL;
-  res.redirect(`/urls/${id}`);
-});
-
-// GET /urls/:id => Page to edit single URL
-app.get('/urls/:id', (req, res) => {
-  const id = req.params.id;
-  const user = getUserFromCookies(req, users);
-  const templateVars = { id, longURL: urlDatabase[id], user };
-  res.render('urls_show', templateVars);
-});
-
-// POST /urls/:id => Update stored URL after editing
-app.post('/urls/:id', (req, res) => {
-  const id = req.params.id;
-  const validURL = validateURL(req.body.longURL);
-  urlDatabase[id] = validURL;
+  const shortURL = generateUniqueKey(6, urlDatabase);
+  const longURL = validateURL(req.body.longURL);
+  urlDatabase[shortURL] = { shortURL, longURL, userID: user.id };
   res.redirect('/urls');
 });
 
-// GET /u/:id => Redirect short URL to long URL
-app.get('/u/:id', (req, res) => {
-  const id = req.params.id;
-  if (!(id in urlDatabase)) {
+// GET /urls/:shortURL => Page to edit single URL
+app.get('/urls/:shortURL', (req, res) => {
+  const shortURL = req.params.shortURL;
+  const longURL = urlDatabase[shortURL].longURL;
+  const user = getUserFromCookies(req, users);
+  res.render('urls_edit', { shortURL, longURL, user });
+});
+
+// POST /urls/:shortURL => Update stored URL after editing
+app.post('/urls/:shortURL', (req, res) => {
+  const shortURL = req.params.shortURL;
+  const longURL = validateURL(req.body.longURL);
+  urlDatabase[shortURL].longURL = longURL;
+  res.redirect('/urls');
+});
+
+// GET /u/:shortURL => Redirect short URL to long URL
+app.get('/u/:shortURL', (req, res) => {
+  const shortURL = req.params.shortURL;
+  if (!(shortURL in urlDatabase)) {
     return error(req, res, 400, 'Short URL does not exist');
   }
-  res.redirect(urlDatabase[req.params.id]);
+  res.redirect(urlDatabase[shortURL].longURL);
 });
 
 // GET /register => Registration page

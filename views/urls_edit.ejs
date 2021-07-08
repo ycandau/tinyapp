@@ -29,15 +29,13 @@
       <h3>Edit TinyURL</h3>
 
       <!-- Short URL -->
-      <div class="">
-        Short URL: <a href="/u/<%= id %>" target="_blank"><%= id %></a>
-      </div>
+      <div class="">Short URL: <%= shortURL %></div>
       <!-- Long URL -->
       <div class="">
         Long URL: <a href="<%= longURL %>" target="_blank"><%= longURL %></a>
       </div>
       <!-- New long URL -->
-      <form method="POST" action="/urls/<%= id %>" class="form-inline">
+      <form method="POST" action="/urls/<%= shortURL %>" class="form-inline">
         <div class="form-group mb-2">
           <label for="longURL">New long URL:</label>
           <input
