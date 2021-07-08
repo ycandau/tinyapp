@@ -5,6 +5,7 @@
 // @todo:
 //   - Ask difference between: Unauthorized (401) | Forbidden (403)
 //   - Link for new URL in urls_list
+//   - Check about session cookie deletion
 
 //------------------------------------------------------------------------------
 // Password encryption
@@ -123,8 +124,8 @@ const validateURL = (url) => {
  * @return {(object|null)} A user object if found, or `null` otherwise.
  */
 const getUserFromCookies = (req, users) =>
-  req.cookies && req.cookies.user_id && req.cookies.user_id in users
-    ? users[req.cookies.user_id]
+  req.session && req.session.user_id && req.session.user_id in users
+    ? users[req.session.user_id]
     : null;
 
 /**
@@ -190,8 +191,13 @@ app.set('view engine', 'ejs');
 const morgan = require('morgan');
 app.use(morgan('dev'));
 
-const cookieParser = require('cookie-parser');
-app.use(cookieParser());
+var cookieSession = require('cookie-session');
+app.use(
+  cookieSession({
+    name: 'session',
+    keys: ['phenomene', 'ectoplasme', 'sempiternel'],
+  })
+);
 
 app.use(express.urlencoded({ extended: false })); // primitives only
 
@@ -343,7 +349,7 @@ app.post('/login', (req, res) => {
   }
 
   // Happy
-  res.cookie('user_id', user.id);
+  req.session.user_id = user.id;
   res.redirect('/urls');
 });
 
@@ -359,7 +365,7 @@ app.post('/register', (req, res) => {
   const id = generateUniqueKey(6, users);
   const hashedPassword = bcrypt.hashSync(password, 10);
   users[id] = { id, email, password: hashedPassword };
-  res.cookie('user_id', id);
+  req.session.user_id = id;
   res.redirect('/urls');
 });
 
@@ -367,7 +373,7 @@ app.post('/register', (req, res) => {
 // POST /logout => Log user out
 
 app.post('/logout', (req, res) => {
-  res.clearCookie('user_id');
+  req.session = null;
   res.redirect('/');
 });
 
