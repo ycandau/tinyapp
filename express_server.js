@@ -2,6 +2,15 @@
 // express_server.js
 //==============================================================================
 
+// @todo:
+//   - Ask difference between: Unauthorized (401) | Forbidden (403)
+//   - Link for new URL in urls_list
+
+//------------------------------------------------------------------------------
+// Password encryption
+
+const bcrypt = require('bcrypt');
+
 //------------------------------------------------------------------------------
 // Constants and simulated databases
 
@@ -49,22 +58,22 @@ const users = {
   u1: {
     id: 'u1',
     email: 'rfripp@example.com',
-    password: 'thrak',
+    password: bcrypt.hashSync('thrak', 10),
   },
   u2: {
     id: 'u2',
     email: 'sreich@example.com',
-    password: '18musicians',
+    password: bcrypt.hashSync('18musicians', 10),
   },
   ua: {
     id: 'ua',
     email: 'a@a',
-    password: 'aaa',
+    password: bcrypt.hashSync('aaa', 10),
   },
   ub: {
     id: 'ub',
     email: 'b@b',
-    password: 'bbb',
+    password: bcrypt.hashSync('bbb', 10),
   },
 };
 
@@ -155,6 +164,7 @@ const error = (code, msg) => (req, res) =>
   Status: ${code} <br />
   Cause:  ${msg} <br />\n\n`);
 
+//------------------------------------------------------------------------------
 // Error messages
 
 const emptyRegistrationInput = error(400, 'Email or password is empty');
@@ -166,10 +176,6 @@ const emailNoteRegistered = error(403, 'Email not registered');
 const incorrectPassword = error(403, 'Incorrect password');
 
 const urlDoesNotExist = error(404, 'Short URL does not exist');
-
-// @todo:
-//   - Ask difference between: Unauthorized (401) | Forbidden (403)
-//   - Link for new URL in urls_list
 
 //------------------------------------------------------------------------------
 // Create and initialize server
@@ -332,7 +338,9 @@ app.post('/login', (req, res) => {
   const { email, password } = req.body;
   const user = findUserFromEmail(email, users);
   if (!user) return emailNoteRegistered(req, res);
-  if (password !== user.password) return incorrectPassword(req, res);
+  if (!bcrypt.compareSync(password, user.password)) {
+    return incorrectPassword(req, res);
+  }
 
   // Happy
   res.cookie('user_id', user.id);
@@ -349,7 +357,8 @@ app.post('/register', (req, res) => {
 
   // Happy
   const id = generateUniqueKey(6, users);
-  users[id] = { id, email, password };
+  const hashedPassword = bcrypt.hashSync(password, 10);
+  users[id] = { id, email, password: hashedPassword };
   res.cookie('user_id', id);
   res.redirect('/urls');
 });
