@@ -56,6 +56,16 @@ app.use(morgan('dev'));
 const cookieSession = require('cookie-session');
 app.use(cookieSession({ name: 'session', keys: ['noema', 'noesis', 'sator'] }));
 
+// const methodOverride = require('method-override');
+// app.use(methodOverride('_method'));
+
+app.use((req, res, next) => {
+  if (req.query._method) {
+    req.method = req.query._method;
+  }
+  next();
+});
+
 app.use(express.urlencoded({ extended: false })); // primitives only
 
 //------------------------------------------------------------------------------
@@ -69,7 +79,6 @@ app.get('/', (req, res) => {
 
 //------------------------------------------------------------------------------
 // GET /urls => Display list of all stored URLs
-// @todo | Stretch: date / number of visits / unique visits
 
 app.get('/urls', (req, res) => {
   const user = getUserFromCookies(req, users);
@@ -95,7 +104,6 @@ app.get('/urls/new', (req, res) => {
 
 //------------------------------------------------------------------------------
 // GET /urls/:shortURL => Page to edit single URL
-// @todo | Stretch: Analytics
 
 app.get('/urls/:shortURL', (req, res) => {
   const shortURL = req.params.shortURL;
@@ -140,9 +148,10 @@ app.post('/urls', (req, res) => {
 });
 
 //------------------------------------------------------------------------------
-// POST /urls/:shortURL => Update stored URL after editing
+// POST /urls/:shortURL?_method=PUT
+// => PUT /urls/:shortURL => Update stored URL after editing
 
-app.post('/urls/:shortURL', (req, res) => {
+app.put('/urls/:shortURL', (req, res) => {
   const shortURL = req.params.shortURL;
   const urlExists = shortURL in urlDatabase;
   if (!urlExists) return urlDoesNotExist(req, res);
@@ -160,9 +169,10 @@ app.post('/urls/:shortURL', (req, res) => {
 });
 
 //------------------------------------------------------------------------------
-// POST /urls/:shortURL/delete => Delete URL from stored list
+// POST /urls/:shortURL?_method=DELETE
+// => DELETE /urls/:shortURL => Delete URL from stored list
 
-app.post('/urls/:shortURL/delete', (req, res) => {
+app.delete('/urls/:shortURL', (req, res) => {
   const shortURL = req.params.shortURL;
   const urlExists = shortURL in urlDatabase;
   if (!urlExists) return urlDoesNotExist(req, res);

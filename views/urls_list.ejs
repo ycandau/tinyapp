@@ -45,6 +45,7 @@
             <td>
               <a href="<%= longURL %>" target="_blank"><%= longURL %></a>
             </td>
+
             <!-- Button: Redirect to edit URL -->
             <td>
               <form
@@ -57,11 +58,12 @@
                 </button>
               </form>
             </td>
+
             <!-- Button: Delete URL -->
             <td>
               <form
                 method="POST"
-                action="/urls/<%= shortURL %>/delete"
+                action="/urls/<%= shortURL %>?_method=DELETE"
                 class="form-inline"
               >
                 <button type="submit" class="btn btn-outline-danger">

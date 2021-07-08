@@ -34,8 +34,13 @@
       <div class="">
         Long URL: <a href="<%= longURL %>" target="_blank"><%= longURL %></a>
       </div>
+
       <!-- New long URL -->
-      <form method="POST" action="/urls/<%= shortURL %>" class="form-inline">
+      <form
+        method="POST"
+        action="/urls/<%= shortURL %>?_method=PUT"
+        class="form-inline"
+      >
         <div class="form-group mb-2">
           <label for="longURL">New long URL:</label>
           <input
