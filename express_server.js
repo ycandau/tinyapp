@@ -8,175 +8,39 @@
 //   - Check about session cookie deletion
 
 //------------------------------------------------------------------------------
-// Password encryption
-
-const bcrypt = require('bcrypt');
-
-//------------------------------------------------------------------------------
-// Constants and simulated databases
+// Constants
 
 const port = 8080;
 
-const urlDatabase = {
-  l1: {
-    shortURL: 'l1',
-    longURL: 'http://www.example.com',
-    userID: 'u1',
-  },
-  l2: {
-    shortURL: 'l2',
-    longURL: 'http://www.google.com',
-    userID: 'u1',
-  },
-  l3: {
-    shortURL: 'l3',
-    longURL: 'http://www.lighthouselabs.ca',
-    userID: 'u1',
-  },
-  la1: {
-    shortURL: 'la1',
-    longURL: 'http://www.example.com',
-    userID: 'ua',
-  },
-  la2: {
-    shortURL: 'la2',
-    longURL: 'http://www.laaa2.ca',
-    userID: 'ua',
-  },
-  lb1: {
-    shortURL: 'lb1',
-    longURL: 'http://www.example.com',
-    userID: 'ub',
-  },
-  lb2: {
-    shortURL: 'lb2',
-    longURL: 'http://www.lbbb2.ca',
-    userID: 'ub',
-  },
-};
-
-const users = {
-  u1: {
-    id: 'u1',
-    email: 'rfripp@example.com',
-    password: bcrypt.hashSync('thrak', 10),
-  },
-  u2: {
-    id: 'u2',
-    email: 'sreich@example.com',
-    password: bcrypt.hashSync('18musicians', 10),
-  },
-  ua: {
-    id: 'ua',
-    email: 'a@a',
-    password: bcrypt.hashSync('aaa', 10),
-  },
-  ub: {
-    id: 'ub',
-    email: 'b@b',
-    password: bcrypt.hashSync('bbb', 10),
-  },
-};
-
 //------------------------------------------------------------------------------
-// Helper functions
+// Misc requires
 
-const generateRandomChar = () => {
-  const n = (Math.random() * 62) >> 0;
-  const code =
-    n < 26
-      ? n + 65 // uppercase
-      : n < 52
-      ? n + 71 // lowercase
-      : n < 62
-      ? n - 4 // digits
-      : 95; // default, never set
-  return String.fromCharCode(code);
-};
+const bcrypt = require('bcrypt');
 
-const generateRandomString = (length) => {
-  let str = '';
-  for (let i = 0; i < length; i++) {
-    str += generateRandomChar();
-  }
-  return str;
-};
+const users = require('./data/users');
+const urlDatabase = require('./data/urls');
 
-const generateUniqueKey = (length, obj) => {
-  let key = '';
-  do {
-    key = generateRandomString(length);
-  } while (key in obj);
-  return key;
-};
-
-// @todo Improve validation with regex?
-const validateURL = (url) => {
-  const trimmed = url.trim();
-  return trimmed.includes('http') ? trimmed : `http://${trimmed}`;
-};
-
-/**
- * Get the current user from the cookies included in a request.
- *
- * @param {object} req The request.
- * @param {object} users Information on all registered users.
- * @return {(object|null)} A user object if found, or `null` otherwise.
- */
-const getUserFromCookies = (req, users) =>
-  req.session && req.session.user_id && req.session.user_id in users
-    ? users[req.session.user_id]
-    : null;
-
-/**
- * Look for a user by email.
- * Assumes that there are no duplicate emails in the database.
- *
- * @param {string} email The email of the user.
- * @param {object} users Users database.
- * @return {(object|null)} A user object if found, or `null` otherwise.
- */
-const findUserFromEmail = (email, users) =>
-  Object.values(users).filter((user) => user.email === email)[0] || null;
-
-/**
- * Filter the database to get the array of URL objects owned by a user.
- *
- * @param {string} id User id.
- * @param {object} urlDatabase URL database.
- * @returns {array} An array of all URL objects with matching user ids.
- */
-const urlsForUser = (id, urlDatabase) =>
-  Object.values(urlDatabase).filter(({ userID }) => userID === id);
-
-/**
- * Send an error message in return to an invalid request.
- *
- * @param {number} code The status code to send back.
- * @param {string} msg A message describing the issue.
- * @param {object} req The request.
- * @param {object} res The response.
- */
-const error = (code, msg) => (req, res) =>
-  res.status(code).send(`
-  Invalid request: <br />
-  Method: ${req.method} <br />
-  Action: ${req.originalUrl} <br />
-  Status: ${code} <br />
-  Cause:  ${msg} <br />\n\n`);
+const {
+  generateUniqueKey,
+  validateURL,
+  getUserFromCookies,
+  getUserByEmail,
+  urlsForUser,
+  sendError,
+} = require('./helpers');
 
 //------------------------------------------------------------------------------
 // Error messages
 
-const emptyRegistrationInput = error(400, 'Email or password is empty');
-const emailAlreadyRegistered = error(400, 'Email already registred');
+const emptyRegistrationInput = sendError(400, 'Email or password is empty');
+const emailAlreadyRegistered = sendError(400, 'Email already registred');
 
-const userNotLoggedIn = error(403, 'User not logged in');
-const userDoesNotOwn = error(403, 'User does not own URL');
-const emailNoteRegistered = error(403, 'Email not registered');
-const incorrectPassword = error(403, 'Incorrect password');
+const userNotLoggedIn = sendError(403, 'User not logged in');
+const userDoesNotOwn = sendError(403, 'User does not own URL');
+const emailNoteRegistered = sendError(403, 'Email not registered');
+const incorrectPassword = sendError(403, 'Incorrect password');
 
-const urlDoesNotExist = error(404, 'Short URL does not exist');
+const urlDoesNotExist = sendError(404, 'Short URL does not exist');
 
 //------------------------------------------------------------------------------
 // Create and initialize server
@@ -342,7 +206,7 @@ app.get('/register', (req, res) => {
 
 app.post('/login', (req, res) => {
   const { email, password } = req.body;
-  const user = findUserFromEmail(email, users);
+  const user = getUserByEmail(email, users);
   if (!user) return emailNoteRegistered(req, res);
   if (!bcrypt.compareSync(password, user.password)) {
     return incorrectPassword(req, res);
@@ -359,7 +223,7 @@ app.post('/login', (req, res) => {
 app.post('/register', (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) return emptyRegistrationInput(req, res);
-  if (findUserFromEmail(email, users)) return emailAlreadyRegistered(req, res);
+  if (getUserByEmail(email, users)) return emailAlreadyRegistered(req, res);
 
   // Happy
   const id = generateUniqueKey(6, users);
