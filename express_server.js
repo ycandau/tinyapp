@@ -8,20 +8,40 @@
 const port = 8080;
 
 const urlDatabase = {
-  a: {
-    shortURL: 'a',
+  l1: {
+    shortURL: 'l1',
     longURL: 'http://www.example.com',
     userID: 'u1',
   },
-  b: {
-    shortURL: 'b',
+  l2: {
+    shortURL: 'l2',
     longURL: 'http://www.google.com',
     userID: 'u1',
   },
-  c: {
-    shortURL: 'c',
+  l3: {
+    shortURL: 'l3',
     longURL: 'http://www.lighthouselabs.ca',
     userID: 'u1',
+  },
+  la1: {
+    shortURL: 'la1',
+    longURL: 'http://www.laaa1.ca',
+    userID: 'ua',
+  },
+  la2: {
+    shortURL: 'la2',
+    longURL: 'http://www.laaa2.ca',
+    userID: 'ua',
+  },
+  lb1: {
+    shortURL: 'lb1',
+    longURL: 'http://www.lbbb1.ca',
+    userID: 'ub',
+  },
+  lb2: {
+    shortURL: 'lb2',
+    longURL: 'http://www.lbbb2.ca',
+    userID: 'ub',
   },
 };
 
@@ -36,10 +56,15 @@ const users = {
     email: 'sreich@example.com',
     password: '18musicians',
   },
-  u3: {
-    id: 'u3',
-    email: 'a@b',
-    password: 'abc',
+  ua: {
+    id: 'ua',
+    email: 'a@a',
+    password: 'aaa',
+  },
+  ub: {
+    id: 'ub',
+    email: 'b@b',
+    password: 'bbb',
   },
 };
 
@@ -77,7 +102,8 @@ const generateUniqueKey = (length, obj) => {
 
 // @todo Improve validation with regex?
 const validateURL = (url) => {
-  return url.includes('http') ? url : `http://${url}`;
+  const trimmed = url.trim();
+  return trimmed.includes('http') ? trimmed : `http://${trimmed}`;
 };
 
 /**
@@ -85,7 +111,7 @@ const validateURL = (url) => {
  *
  * @param {object} req The request.
  * @param {object} users Information on all registered users.
- * @return {(object|null)} A user object if found, null otherwise.
+ * @return {(object|null)} A user object if found, or `null` otherwise.
  */
 const getUserFromCookies = (req, users) =>
   req.cookies && req.cookies.user_id && req.cookies.user_id in users
@@ -97,21 +123,31 @@ const getUserFromCookies = (req, users) =>
  * Assumes that there are no duplicate emails in the database.
  *
  * @param {string} email The email of the user.
- * @param {object} users Information on all registered users.
- * @return {(object|null)} A user object if found, null otherwise.
+ * @param {object} users Users database.
+ * @return {(object|null)} A user object if found, or `null` otherwise.
  */
 const findUserFromEmail = (email, users) =>
   Object.values(users).filter((user) => user.email === email)[0] || null;
 
 /**
+ * Filter the database to get the array of URL objects owned by a user.
+ *
+ * @param {string} id User id.
+ * @param {object} urlDatabase URL database.
+ * @returns {array} An array of all URL objects with matching user ids.
+ */
+const urlsForUser = (id, urlDatabase) =>
+  Object.values(urlDatabase).filter(({ userID }) => userID === id);
+
+/**
  * Send an error message in return to an invalid request.
  *
- * @param {object} req The request.
- * @param {object} res The response.
  * @param {number} code The status code to send back.
  * @param {string} msg A message describing the issue.
+ * @param {object} req The request.
+ * @param {object} res The response.
  */
-const error = (req, res, code, msg) =>
+const error = (code, msg) => (req, res) =>
   res.status(code).send(`
     Invalid request:<br />
     Method: ${req.method}<br />
@@ -119,6 +155,22 @@ const error = (req, res, code, msg) =>
     Status code: ${code}<br />
     Cause: ${msg}<br />
   `);
+
+// Error messages
+
+const emptyRegistrationInput = error(400, 'Email or password is empty');
+const emailAlreadyRegistered = error(400, 'Email already registred');
+
+const userNotLoggedIn = error(403, 'User not logged in');
+const userDoesNotOwn = error(403, 'User does not own URL');
+const emailNoteRegistered = error(403, 'Email not registered');
+const incorrectPassword = error(403, 'Incorrect password');
+
+const urlDoesNotExist = error(404, 'Short URL does not exist');
+
+// @todo:
+//   - Ask difference between: Unauthorized (401) | Forbidden (403)
+//   - Una
 
 //------------------------------------------------------------------------------
 // Create and initialize server
@@ -139,124 +191,177 @@ app.use(cookieParser());
 app.use(express.urlencoded({ extended: false })); // primitives only
 
 //------------------------------------------------------------------------------
-// Set endpoints
-
 // GET / => Home page
+
 app.get('/', (req, res) => {
-  res.send('Hello!\n');
+  const user = getUserFromCookies(req, users);
+  if (!user) return res.redirect('/login');
+  res.redirect('/urls');
 });
 
+//------------------------------------------------------------------------------
 // GET /urls => Display list of all stored URLs
+// @todo | Stretch: date / number of visits / unique visits
+
 app.get('/urls', (req, res) => {
   const user = getUserFromCookies(req, users);
-  const urls = Object.values(urlDatabase);
+  if (!user) return userNotLoggedIn(req, res);
+
+  // Happy
+  const urls = urlsForUser(user.id, urlDatabase);
   res.render('urls_list', { urls, user });
 });
 
-// POST /urls/:shortURL/delete => Delete URL from stored list
-app.post('/urls/:shortURL/delete', (req, res) => {
-  const shortURL = req.params.shortURL;
-  delete urlDatabase[shortURL];
-  res.redirect('/urls');
-});
-
+//------------------------------------------------------------------------------
 // GET /urls/new => Page to create new URL
+
 app.get('/urls/new', (req, res) => {
   const user = getUserFromCookies(req, users);
-  if (!user) {
-    return res.redirect('/login');
-  }
+  if (!user) return res.redirect('/login');
+
+  // Happy
   res.render('urls_new', { user });
 });
 
-// POST /urls => Store new URL after creation
-app.post('/urls', (req, res) => {
-  const user = getUserFromCookies(req, users);
-  if (!user) {
-    return error(req, res, 403, 'User not logged in');
-  }
-  const shortURL = generateUniqueKey(6, urlDatabase);
-  const longURL = validateURL(req.body.longURL);
-  urlDatabase[shortURL] = { shortURL, longURL, userID: user.id };
-  res.redirect('/urls');
-});
-
+//------------------------------------------------------------------------------
 // GET /urls/:shortURL => Page to edit single URL
+// @todo | Stretch: Analytics
+
 app.get('/urls/:shortURL', (req, res) => {
   const shortURL = req.params.shortURL;
-  const longURL = urlDatabase[shortURL].longURL;
+  const urlExists = shortURL in urlDatabase;
+  if (!urlExists) return urlDoesNotExist(req, res);
+
   const user = getUserFromCookies(req, users);
+  if (!user) return userNotLoggedIn(req, res);
+
+  const userOwns = urlDatabase[shortURL].userID === user.id;
+  if (!userOwns) return userDoesNotOwn(req, res);
+
+  // Happy
+  const longURL = urlDatabase[shortURL].longURL;
   res.render('urls_edit', { shortURL, longURL, user });
 });
 
+//------------------------------------------------------------------------------
+// GET /u/:shortURL => Redirect short URL to long URL
+
+app.get('/u/:shortURL', (req, res) => {
+  const shortURL = req.params.shortURL;
+  const urlExists = shortURL in urlDatabase;
+  if (!urlExists) return urlDoesNotExist(req, res);
+
+  // Happy
+  res.redirect(urlDatabase[shortURL].longURL);
+});
+
+//------------------------------------------------------------------------------
+// POST /urls => Store new URL after creation
+
+app.post('/urls', (req, res) => {
+  const user = getUserFromCookies(req, users);
+  if (!user) return userNotLoggedIn(req, res);
+
+  // Happy
+  const shortURL = generateUniqueKey(6, urlDatabase);
+  const longURL = validateURL(req.body.longURL);
+  urlDatabase[shortURL] = { shortURL, longURL, userID: user.id };
+  res.redirect(`/urls/${shortURL}`);
+});
+
+//------------------------------------------------------------------------------
 // POST /urls/:shortURL => Update stored URL after editing
+
 app.post('/urls/:shortURL', (req, res) => {
+  const shortURL = req.params.shortURL;
+  const urlExists = shortURL in urlDatabase;
+  if (!urlExists) return urlDoesNotExist(req, res);
+
+  const user = getUserFromCookies(req, users);
+  if (!user) return userNotLoggedIn(req, res);
+
+  const userOwns = urlDatabase[shortURL].userID === user.id;
+  if (!userOwns) return userDoesNotOwn(req, res);
+
+  // Happy
   const shortURL = req.params.shortURL;
   const longURL = validateURL(req.body.longURL);
   urlDatabase[shortURL].longURL = longURL;
   res.redirect('/urls');
 });
 
-// GET /u/:shortURL => Redirect short URL to long URL
-app.get('/u/:shortURL', (req, res) => {
+//------------------------------------------------------------------------------
+// POST /urls/:shortURL/delete => Delete URL from stored list
+
+app.post('/urls/:shortURL/delete', (req, res) => {
   const shortURL = req.params.shortURL;
-  if (!(shortURL in urlDatabase)) {
-    return error(req, res, 400, 'Short URL does not exist');
-  }
-  res.redirect(urlDatabase[shortURL].longURL);
-});
+  const urlExists = shortURL in urlDatabase;
+  if (!urlExists) return urlDoesNotExist(req, res);
 
-// GET /register => Registration page
-app.get('/register', (req, res) => {
   const user = getUserFromCookies(req, users);
-  if (user) {
-    return res.redirect('/urls');
-  }
-  res.render('register', { user });
+  if (!user) return userNotLoggedIn(req, res);
+
+  const userOwns = urlDatabase[shortURL].userID === user.id;
+  if (!userOwns) return userDoesNotOwn(req, res);
+
+  // Happy
+  delete urlDatabase[shortURL];
+  res.redirect('/urls');
 });
 
+//------------------------------------------------------------------------------
 // GET /login => Login page
+
 app.get('/login', (req, res) => {
   const user = getUserFromCookies(req, users);
-  if (user) {
-    return res.redirect('/urls');
-  }
+  if (user) return res.redirect('/urls');
   res.render('login', { user });
 });
 
+//------------------------------------------------------------------------------
+// GET /register => Registration page
+
+app.get('/register', (req, res) => {
+  const user = getUserFromCookies(req, users);
+  if (user) return res.redirect('/urls');
+  res.render('register', { user });
+});
+
+//------------------------------------------------------------------------------
+// POST /login => Log user in (403 on failure)
+
+app.post('/login', (req, res) => {
+  const { email, password } = req.body;
+  const user = findUserFromEmail(email, users);
+  if (!user) return emailNoteRegistered(req, res);
+  if (password !== user.password) return incorrectPassword(req, res);
+
+  // Happy
+  res.cookie('user_id', user.id);
+  res.redirect('/urls');
+});
+
+//------------------------------------------------------------------------------
 // POST /register => Register user (400 on failure)
+
 app.post('/register', (req, res) => {
   const { email, password } = req.body;
-  if (!email || !password) {
-    return error(req, res, 400, 'Email or password is empty');
-  }
-  if (findUserFromEmail(email, users)) {
-    return error(req, res, 400, 'Email already registred');
-  }
+  if (!email || !password) return emptyRegistrationInput(req, res);
+  if (findUserFromEmail(email, users)) return emailAlreadyRegistered(req, res);
+
+  // Happy
   const id = generateUniqueKey(6, users);
   users[id] = { id, email, password };
   res.cookie('user_id', id);
   res.redirect('/urls');
 });
 
-// POST /login => Log user in (403 on failure)
-app.post('/login', (req, res) => {
-  const { email, password } = req.body;
-  const user = findUserFromEmail(email, users);
-  if (!user) {
-    return error(req, res, 403, 'Email not registered');
-  }
-  if (password !== user.password) {
-    return error(req, res, 403, 'Incorrect password');
-  }
-  res.cookie('user_id', user.id);
-  res.redirect('/urls');
-});
-
+//------------------------------------------------------------------------------
 // POST /logout => Log user out
+
 app.post('/logout', (req, res) => {
   res.clearCookie('user_id');
-  res.redirect('/urls');
+  res.redirect('/');
 });
 
 //------------------------------------------------------------------------------
