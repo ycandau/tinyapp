@@ -15,9 +15,8 @@ const port = 8080;
 // Misc requires
 
 const bcrypt = require('bcryptjs');
-
-const users = require('./data/users');
-const urlDatabase = require('./data/urls');
+const users = require('./data/users'); // pseudo database
+const urlDatabase = require('./data/urls'); // pseudo database
 
 const {
   generateUniqueKey,
@@ -55,9 +54,6 @@ app.use(morgan('dev'));
 
 const cookieSession = require('cookie-session');
 app.use(cookieSession({ name: 'session', keys: ['noema', 'noesis', 'sator'] }));
-
-// const methodOverride = require('method-override');
-// app.use(methodOverride('_method'));
 
 app.use((req, res, next) => {
   if (req.query._method) {
@@ -113,12 +109,12 @@ app.get('/urls/:shortURL', (req, res) => {
   const user = getUserFromCookies(req, users);
   if (!user) return userNotLoggedIn(req, res);
 
-  const userOwns = urlDatabase[shortURL].userID === user.id;
+  const url = urlDatabase[shortURL];
+  const userOwns = url.userID === user.id;
   if (!userOwns) return userDoesNotOwn(req, res);
 
   // Happy
-  const longURL = urlDatabase[shortURL].longURL;
-  res.render('urls_edit', { shortURL, longURL, user });
+  res.render('urls_edit', { user, url });
 });
 
 //------------------------------------------------------------------------------
@@ -130,6 +126,7 @@ app.get('/u/:shortURL', (req, res) => {
   if (!urlExists) return urlDoesNotExist(req, res);
 
   // Happy
+  urlDatabase[shortURL].visitCount++;
   res.redirect(urlDatabase[shortURL].longURL);
 });
 
@@ -142,8 +139,14 @@ app.post('/urls', (req, res) => {
 
   // Happy
   const shortURL = generateUniqueKey(6, urlDatabase);
-  const longURL = validateURL(req.body.longURL);
-  urlDatabase[shortURL] = { shortURL, longURL, userID: user.id };
+  urlDatabase[shortURL] = {
+    shortURL,
+    longURL: validateURL(req.body.longURL),
+    userID: user.id,
+    dateCreated: new Date(),
+    visitCount: 0,
+    uniqueVisitCount: 0,
+  };
   res.redirect(`/urls/${shortURL}`);
 });
 
@@ -207,7 +210,7 @@ app.get('/register', (req, res) => {
 });
 
 //------------------------------------------------------------------------------
-// POST /login => Log user in (403 on failure)
+// POST /login => Log user in
 
 app.post('/login', (req, res) => {
   const { email, password } = req.body;
@@ -227,7 +230,7 @@ app.post('/login', (req, res) => {
 });
 
 //------------------------------------------------------------------------------
-// POST /register => Register user (400 on failure)
+// POST /register => Register user
 
 app.post('/register', (req, res) => {
   const { email, password } = req.body;

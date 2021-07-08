@@ -29,16 +29,18 @@
       <h3>Edit TinyURL</h3>
 
       <!-- Short URL -->
-      <div class="">Short URL: <%= shortURL %></div>
+      <div>Short URL: <%= url.shortURL %></div>
+
       <!-- Long URL -->
-      <div class="">
-        Long URL: <a href="<%= longURL %>" target="_blank"><%= longURL %></a>
+      <div>
+        Long URL:
+        <a href="<%= url.longURL %>" target="_blank"><%= url.longURL %></a>
       </div>
 
       <!-- New long URL -->
       <form
         method="POST"
-        action="/urls/<%= shortURL %>?_method=PUT"
+        action="/urls/<%= url.shortURL %>?_method=PUT"
         class="form-inline"
       >
         <div class="form-group mb-2">
@@ -47,12 +49,23 @@
             class="form-control"
             type="text"
             name="longURL"
-            value="<%= longURL %>"
+            value="<%= url.longURL %>"
             style="width: 300px; margin: 1em"
           />
           <button type="submit" class="btn btn-primary">Update</button>
         </div>
       </form>
+
+      <hr />
+
+      <!-- Analytics -->
+      <div>Date created: <%= url.dateCreated %></div>
+      <div>Number of visits: <%= url.visitCount %></div>
+      <div>Number of unique visits: <%= url.uniqueVisitCount %></div>
+
+      <hr />
+
+      <h2>Log</h2>
     </main>
 
     <!-- Bootstrap JS -->
