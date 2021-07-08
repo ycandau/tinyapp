@@ -2,7 +2,7 @@
 // users.js
 //==============================================================================
 
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 
 const users = {
   u1: {

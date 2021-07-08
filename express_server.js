@@ -14,7 +14,7 @@ const port = 8080;
 //------------------------------------------------------------------------------
 // Misc requires
 
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 
 const users = require('./data/users');
 const urlDatabase = require('./data/urls');
@@ -81,7 +81,9 @@ app.get('/urls', (req, res) => {
   if (!user) return userNotLoggedIn(req, res);
 
   // Happy
-  const urls = Object.values(urlDatabase).filter(({ userID }) => userID === id);
+  const urls = Object.values(urlDatabase).filter(
+    ({ userID }) => userID === user.id
+  );
   res.render('urls_list', { urls, user });
 });
 
@@ -236,7 +238,7 @@ app.post('/register', (req, res) => {
 
 app.post('/logout', (req, res) => {
   req.session = null;
-  res.redirect('/');
+  res.redirect('/'); // @todo requirements change back to /urls
 });
 
 //------------------------------------------------------------------------------
