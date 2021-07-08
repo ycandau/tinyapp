@@ -25,7 +25,7 @@ const urlDatabase = {
   },
   la1: {
     shortURL: 'la1',
-    longURL: 'http://www.laaa1.ca',
+    longURL: 'http://www.example.com',
     userID: 'ua',
   },
   la2: {
@@ -35,7 +35,7 @@ const urlDatabase = {
   },
   lb1: {
     shortURL: 'lb1',
-    longURL: 'http://www.lbbb1.ca',
+    longURL: 'http://www.example.com',
     userID: 'ub',
   },
   lb2: {
@@ -149,12 +149,11 @@ const urlsForUser = (id, urlDatabase) =>
  */
 const error = (code, msg) => (req, res) =>
   res.status(code).send(`
-    Invalid request:<br />
-    Method: ${req.method}<br />
-    Action: ${req.originalUrl}<br />
-    Status code: ${code}<br />
-    Cause: ${msg}<br />
-  `);
+  Invalid request: <br />
+  Method: ${req.method} <br />
+  Action: ${req.originalUrl} <br />
+  Status: ${code} <br />
+  Cause:  ${msg} <br />\n\n`);
 
 // Error messages
 
@@ -170,7 +169,7 @@ const urlDoesNotExist = error(404, 'Short URL does not exist');
 
 // @todo:
 //   - Ask difference between: Unauthorized (401) | Forbidden (403)
-//   - Una
+//   - Link for new URL in urls_list
 
 //------------------------------------------------------------------------------
 // Create and initialize server
@@ -284,7 +283,6 @@ app.post('/urls/:shortURL', (req, res) => {
   if (!userOwns) return userDoesNotOwn(req, res);
 
   // Happy
-  const shortURL = req.params.shortURL;
   const longURL = validateURL(req.body.longURL);
   urlDatabase[shortURL].longURL = longURL;
   res.redirect('/urls');
