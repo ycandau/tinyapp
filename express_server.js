@@ -5,7 +5,6 @@
 // @todo:
 //   - Ask difference between: Unauthorized (401) | Forbidden (403)
 //   - Link for new URL in urls_list
-//   - Check about session cookie deletion
 
 //------------------------------------------------------------------------------
 // Constants
@@ -25,19 +24,18 @@ const {
   validateURL,
   getUserFromCookies,
   getUserByEmail,
-  urlsForUser,
   sendError,
 } = require('./helpers');
 
 //------------------------------------------------------------------------------
-// Error messages
+// Error codes and messages
 
 const emptyRegistrationInput = sendError(400, 'Email or password is empty');
 const emailAlreadyRegistered = sendError(400, 'Email already registred');
 
 const userNotLoggedIn = sendError(403, 'User not logged in');
 const userDoesNotOwn = sendError(403, 'User does not own URL');
-const emailNoteRegistered = sendError(403, 'Email not registered');
+const emailNotRegistered = sendError(403, 'Email not registered');
 const incorrectPassword = sendError(403, 'Incorrect password');
 
 const urlDoesNotExist = sendError(404, 'Short URL does not exist');
@@ -55,7 +53,7 @@ app.set('view engine', 'ejs');
 const morgan = require('morgan');
 app.use(morgan('dev'));
 
-var cookieSession = require('cookie-session');
+const cookieSession = require('cookie-session');
 app.use(
   cookieSession({
     name: 'session',
@@ -83,7 +81,7 @@ app.get('/urls', (req, res) => {
   if (!user) return userNotLoggedIn(req, res);
 
   // Happy
-  const urls = urlsForUser(user.id, urlDatabase);
+  const urls = Object.values(urlDatabase).filter(({ userID }) => userID === id);
   res.render('urls_list', { urls, user });
 });
 
@@ -207,7 +205,7 @@ app.get('/register', (req, res) => {
 app.post('/login', (req, res) => {
   const { email, password } = req.body;
   const user = getUserByEmail(email, users);
-  if (!user) return emailNoteRegistered(req, res);
+  if (!user) return emailNotRegistered(req, res);
   if (!bcrypt.compareSync(password, user.password)) {
     return incorrectPassword(req, res);
   }

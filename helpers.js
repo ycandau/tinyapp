@@ -45,7 +45,7 @@ const validateURL = (url) => {
  * @return {(object|undefined)} A user object if found, `undefined` otherwise.
  */
 const getUserFromCookies = (req, users) =>
-  req.session && req.session.user_id && req.session.user_id in users
+  req && req.session && req.session.user_id && req.session.user_id in users
     ? users[req.session.user_id]
     : undefined;
 
@@ -59,16 +59,6 @@ const getUserFromCookies = (req, users) =>
  */
 const getUserByEmail = (email, users) =>
   Object.values(users).filter((user) => user.email === email)[0] || undefined;
-
-/**
- * Filter the database to get the array of URL objects owned by a user.
- *
- * @param {string} id User id.
- * @param {object} urlDatabase URL database.
- * @returns {array} An array of all URL objects with matching user ids.
- */
-const urlsForUser = (id, urlDatabase) =>
-  Object.values(urlDatabase).filter(({ userID }) => userID === id);
 
 /**
  * Send an error message in return to an invalid request.
@@ -91,6 +81,5 @@ module.exports = {
   validateURL,
   getUserFromCookies,
   getUserByEmail,
-  urlsForUser,
   sendError,
 };
