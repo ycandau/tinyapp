@@ -54,12 +54,7 @@ const morgan = require('morgan');
 app.use(morgan('dev'));
 
 const cookieSession = require('cookie-session');
-app.use(
-  cookieSession({
-    name: 'session',
-    keys: ['phenomene', 'ectoplasme', 'sempiternel'],
-  })
-);
+app.use(cookieSession({ name: 'session', keys: ['noema', 'noesis', 'sator'] }));
 
 app.use(express.urlencoded({ extended: false })); // primitives only
 
@@ -208,13 +203,17 @@ app.post('/login', (req, res) => {
   const { email, password } = req.body;
   const user = getUserByEmail(email, users);
   if (!user) return emailNotRegistered(req, res);
-  if (!bcrypt.compareSync(password, user.password)) {
-    return incorrectPassword(req, res);
-  }
 
-  // Happy
-  req.session.user_id = user.id;
-  res.redirect('/urls');
+  bcrypt
+    .compare(password, user.password)
+    .then((doesMatch) => {
+      if (!doesMatch) return incorrectPassword(req, res);
+
+      // Happy
+      req.session.user_id = user.id;
+      res.redirect('/urls');
+    })
+    .catch((err) => console.error(err));
 });
 
 //------------------------------------------------------------------------------
@@ -226,11 +225,16 @@ app.post('/register', (req, res) => {
   if (getUserByEmail(email, users)) return emailAlreadyRegistered(req, res);
 
   // Happy
-  const id = generateUniqueKey(6, users);
-  const hashedPassword = bcrypt.hashSync(password, 10);
-  users[id] = { id, email, password: hashedPassword };
-  req.session.user_id = id;
-  res.redirect('/urls');
+  bcrypt
+    .genSalt(10)
+    .then((salt) => bcrypt.hash(password, salt))
+    .then((hashedPassword) => {
+      const id = generateUniqueKey(6, users);
+      users[id] = { id, email, password: hashedPassword };
+      req.session.user_id = id;
+      res.redirect('/urls');
+    })
+    .catch((err) => console.error(err));
 });
 
 //------------------------------------------------------------------------------
