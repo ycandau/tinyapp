@@ -2,10 +2,6 @@
 // express_server.js
 //==============================================================================
 
-// @todo:
-//   - Link for new URL in urls_list
-//   - change logout back to /urls
-
 //------------------------------------------------------------------------------
 // Misc requires
 
@@ -46,6 +42,10 @@ const userDoesNotOwn = sendError(403, 'User does not own short URL');
 // Not found (404)
 const urlDoesNotExist = sendError(404, 'Short URL does not exist');
 
+// Method not allowed (405)
+const usePut = sendError(405, 'Method overridden: Use PUT /urls/:id');
+const useDelete = sendError(405, 'Method overridden: Use DELETE /urls/:id');
+
 //------------------------------------------------------------------------------
 // Create and initialize server
 
@@ -63,9 +63,7 @@ const cookieSession = require('cookie-session');
 app.use(cookieSession({ name: 'session', keys: ['noema', 'noesis', 'sator'] }));
 
 app.use((req, res, next) => {
-  if (req.query._method) {
-    req.method = req.query._method;
-  }
+  if (req.query._method) req.method = req.query._method;
   next();
 });
 
@@ -134,19 +132,24 @@ app.get('/u/:shortURL', (req, res) => {
 
   // Happy
   const url = urlDatabase[shortURL];
-  url.visitCount++;
 
-  if (!req.session.visitor_id) {
-    req.session.visitor_id = generateUniqueKey(6, visitors);
+  // Analytics
+  const visitor_id = req.session.visitor_id;
+  if (!visitor_id || !visitors.has(visitor_id)) {
+    // No cookie or old cookie
+    const new_visitor_id = generateUniqueKey(6, visitors);
+    req.session.visitor_id = new_visitor_id;
+    visitors.add(new_visitor_id);
     url.uniqueVisitCount++;
   }
-
+  url.visitCount++;
   url.logs.push({ id: req.session.visitor_id, date: new Date() });
+
   res.redirect(urlDatabase[shortURL].longURL);
 });
 
 //------------------------------------------------------------------------------
-// POST /urls => Store new URL after creation
+// POST /urls => Create new URL
 
 app.post('/urls', (req, res) => {
   const user = getUserFromCookies(req, users);
@@ -168,7 +171,9 @@ app.post('/urls', (req, res) => {
 
 //------------------------------------------------------------------------------
 // POST /urls/:shortURL?_method=PUT
-// => PUT /urls/:shortURL => Update stored URL after editing
+// => PUT /urls/:shortURL => Replace / Update URL
+
+app.post('/urls/:shortURL', usePut); // Method overridden
 
 app.put('/urls/:shortURL', (req, res) => {
   const shortURL = req.params.shortURL;
@@ -189,7 +194,9 @@ app.put('/urls/:shortURL', (req, res) => {
 
 //------------------------------------------------------------------------------
 // POST /urls/:shortURL?_method=DELETE
-// => DELETE /urls/:shortURL => Delete URL from stored list
+// => DELETE /urls/:shortURL => Delete URL
+
+app.post('/urls/:shortURL/delete', useDelete); // Method overridden
 
 app.delete('/urls/:shortURL', (req, res) => {
   const shortURL = req.params.shortURL;
@@ -271,8 +278,11 @@ app.post('/register', (req, res) => {
 
 app.post('/logout', (req, res) => {
   req.session = null;
-  res.redirect('/');
+  res.redirect('/urls');
 });
+
+// Note: The redirect to /urls on logout implements the Behaviour Requirements
+//       from Compass, but leads to an error...
 
 //------------------------------------------------------------------------------
 // Start listening

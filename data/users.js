@@ -5,25 +5,20 @@
 const bcrypt = require('bcryptjs');
 
 const users = {
-  u1: {
-    id: 'u1',
+  rfripp: {
+    id: 'rfripp',
     email: 'rfripp@example.com',
-    password: bcrypt.hashSync('thrak', 10),
+    password: bcrypt.hashSync('red', 10),
   },
-  u2: {
-    id: 'u2',
+  sreich: {
+    id: 'sreich',
     email: 'sreich@example.com',
-    password: bcrypt.hashSync('18musicians', 10),
+    password: bcrypt.hashSync('18m', 10),
   },
-  ua: {
-    id: 'ua',
+  aaaaaa: {
+    id: 'aaaaaa',
     email: 'a@a',
     password: bcrypt.hashSync('aaa', 10),
-  },
-  ub: {
-    id: 'ub',
-    email: 'b@b',
-    password: bcrypt.hashSync('bbb', 10),
   },
 };
 

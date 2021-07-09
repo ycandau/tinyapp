@@ -92,6 +92,14 @@ const getUserFromCookies = (req, users) =>
 const getUserByEmail = (email, users) =>
   Object.values(users).filter((user) => user.email === email)[0] || undefined;
 
+const statusCodeMessages = {
+  400: 'Bad request',
+  401: 'Unauthorized',
+  403: 'Forbidden',
+  404: 'Not found',
+  405: 'Method not allowed',
+};
+
 /**
  * Send an error message in return to an invalid request.
  *
@@ -105,7 +113,8 @@ const sendError = (code, msg) => (req, res) =>
   Invalid request: <br />
   Method: ${req.method} <br />
   Action: ${req.originalUrl} <br />
-  Status: ${code} <br />
+  Code:   ${code} <br />
+  Satus:  ${statusCodeMessages[code]} <br />
   Cause:  ${msg} <br />\n\n`);
 
 module.exports = {
