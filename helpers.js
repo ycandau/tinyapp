@@ -42,7 +42,7 @@ const generateRandomString = (length) => {
  * @return {string} A random string guaranteed to not be in the collection.
  */
 const generateUniqueKey = (length, coll) => {
-  // Setify arrays and objects
+  // Setify arrays and objects, does not check for other types
   const set =
     coll instanceof Set
       ? coll

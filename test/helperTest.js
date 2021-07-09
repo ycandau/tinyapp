@@ -1,28 +1,28 @@
 const { assert } = require('chai');
 
 const {
-  validateURL,
+  formatURL,
   getUserFromCookies,
   getUserByEmail,
 } = require('../helpers.js');
 
 //------------------------------------------------------------------------------
 
-describe('#validateURL', () => {
-  it('should return the url unchanged the protocol is included', () => {
-    const url = validateURL('http://www.example.com');
+describe('#formatURL', () => {
+  it('should return the url unchanged if the protocol is included', () => {
+    const url = formatURL('http://www.example.com');
     const expectedUrl = 'http://www.example.com';
     assert.equal(url, expectedUrl);
   });
 
   it('should trim the url of extraneous whitespace', () => {
-    const url = validateURL('   http://www.example.com    ');
+    const url = formatURL('   http://www.example.com    ');
     const expectedUrl = 'http://www.example.com';
     assert.equal(url, expectedUrl);
   });
 
   it('should add the protocol if it is missing', () => {
-    const url = validateURL('www.example.com');
+    const url = formatURL('www.example.com');
     const expectedUrl = 'http://www.example.com';
     assert.equal(url, expectedUrl);
   });
