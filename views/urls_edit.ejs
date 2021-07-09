@@ -58,8 +58,8 @@
       <h3>Analytics</h3>
 
       <div>Date created: <%= url.dateCreated %></div>
-      <div>Number of visits: <%= url.visitCount %></div>
-      <div>Number of unique visits: <%= url.uniqueVisitCount %></div>
+      <div>Number of visits: <%= url.logs.length %></div>
+      <div>Number of unique visits: <%= url.visitors.size %></div>
       <hr />
 
       <!-- Log -->

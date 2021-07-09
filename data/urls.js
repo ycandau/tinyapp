@@ -8,8 +8,7 @@ const urlDatabase = {
     longURL: 'http://www.example.com',
     userID: 'rfripp',
     dateCreated: new Date(2021, 5, 23, 5, 38),
-    visitCount: 0,
-    uniqueVisitCount: 0,
+    visitors: new Set(),
     logs: [],
   },
   eN3waL: {
@@ -17,8 +16,7 @@ const urlDatabase = {
     longURL: 'http://www.lighthouselabs.com',
     userID: 'rfripp',
     dateCreated: new Date(2021, 6, 26, 3, 12),
-    visitCount: 0,
-    uniqueVisitCount: 0,
+    visitors: new Set(),
     logs: [],
   },
   Op8ahY: {
@@ -26,8 +24,7 @@ const urlDatabase = {
     longURL: 'http://www.google.com',
     userID: 'rfripp',
     dateCreated: new Date(2021, 6, 28, 9, 54),
-    visitCount: 0,
-    uniqueVisitCount: 0,
+    visitors: new Set(),
     logs: [],
   },
   lUm2bo: {
@@ -35,8 +32,7 @@ const urlDatabase = {
     longURL: 'http://www.sfu.ca',
     userID: 'rfripp',
     dateCreated: new Date(2021, 7, 1, 8, 2),
-    visitCount: 0,
-    uniqueVisitCount: 0,
+    visitors: new Set(),
     logs: [],
   },
 };

@@ -22,7 +22,7 @@ const {
 
 const port = 8080;
 
-const visitors = new Set();
+const allVisitors = new Set();
 
 //------------------------------------------------------------------------------
 // Error codes and messages
@@ -134,18 +134,19 @@ app.get('/u/:shortURL', (req, res) => {
   const url = urlDatabase[shortURL];
 
   // Analytics
-  const visitor_id = req.session.visitor_id;
-  if (!visitor_id || !visitors.has(visitor_id)) {
-    // No cookie or old cookie
-    const new_visitor_id = generateUniqueKey(6, visitors);
-    req.session.visitor_id = new_visitor_id;
-    visitors.add(new_visitor_id);
-    url.uniqueVisitCount++;
-  }
-  url.visitCount++;
-  url.logs.push({ id: req.session.visitor_id, date: new Date() });
+  // Get fresh id if no visitor cookie or old cookie
+  const visitor_id =
+    !req.session.visitor_id || !allVisitors.has(req.session.visitor_id)
+      ? generateUniqueKey(6, allVisitors)
+      : req.session.visitor_id;
 
-  res.redirect(urlDatabase[shortURL].longURL);
+  // Ok to do even if not necessary (idempotent)
+  allVisitors.add(visitor_id);
+  url.visitors.add(visitor_id);
+  req.session.visitor_id = visitor_id;
+  url.logs.push({ id: visitor_id, date: new Date() });
+
+  res.redirect(url.longURL);
 });
 
 //------------------------------------------------------------------------------
@@ -162,8 +163,7 @@ app.post('/urls', (req, res) => {
     longURL: formatURL(req.body.longURL),
     userID: user.id,
     dateCreated: new Date(),
-    visitCount: 0,
-    uniqueVisitCount: 0,
+    visitors: new Set(),
     logs: [],
   };
   res.redirect(`/urls/${shortURL}`);
@@ -277,7 +277,13 @@ app.post('/register', (req, res) => {
 // POST /logout => Log user out
 
 app.post('/logout', (req, res) => {
-  req.session = null;
+  if (!req.session.visitor_id) {
+    // Delete whole session if no visitor cookie
+    req.session = null;
+  } else {
+    // But keep visitor cookie if present
+    delete req.session.user_id;
+  }
   res.redirect('/urls');
 });
 
