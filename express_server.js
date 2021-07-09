@@ -3,13 +3,8 @@
 //==============================================================================
 
 // @todo:
-//   - Ask difference between: Unauthorized (401) | Forbidden (403)
 //   - Link for new URL in urls_list
-
-//------------------------------------------------------------------------------
-// Constants
-
-const port = 8080;
+//   - change logout back to /urls
 
 //------------------------------------------------------------------------------
 // Misc requires
@@ -20,23 +15,35 @@ const urlDatabase = require('./data/urls'); // pseudo database
 
 const {
   generateUniqueKey,
-  validateURL,
+  formatURL,
   getUserFromCookies,
   getUserByEmail,
   sendError,
 } = require('./helpers');
 
 //------------------------------------------------------------------------------
+// Constants and globals
+
+const port = 8080;
+
+const visitors = new Set();
+
+//------------------------------------------------------------------------------
 // Error codes and messages
 
+// Bad request (400)
 const emptyRegistrationInput = sendError(400, 'Email or password is empty');
 const emailAlreadyRegistered = sendError(400, 'Email already registred');
 
-const userNotLoggedIn = sendError(403, 'User not logged in');
-const userDoesNotOwn = sendError(403, 'User does not own URL');
-const emailNotRegistered = sendError(403, 'Email not registered');
-const incorrectPassword = sendError(403, 'Incorrect password');
+// Unauthorized (401)
+const emailNotRegistered = sendError(401, 'Email not registered');
+const incorrectPassword = sendError(401, 'Incorrect password');
+const userNotLoggedIn = sendError(401, 'User not logged in');
 
+// Forbidden (403)
+const userDoesNotOwn = sendError(403, 'User does not own short URL');
+
+// Not found (404)
 const urlDoesNotExist = sendError(404, 'Short URL does not exist');
 
 //------------------------------------------------------------------------------
@@ -126,7 +133,15 @@ app.get('/u/:shortURL', (req, res) => {
   if (!urlExists) return urlDoesNotExist(req, res);
 
   // Happy
-  urlDatabase[shortURL].visitCount++;
+  const url = urlDatabase[shortURL];
+  url.visitCount++;
+
+  if (!req.session.visitor_id) {
+    req.session.visitor_id = generateUniqueKey(6, visitors);
+    url.uniqueVisitCount++;
+  }
+
+  url.logs.push({ id: req.session.visitor_id, date: new Date() });
   res.redirect(urlDatabase[shortURL].longURL);
 });
 
@@ -141,11 +156,12 @@ app.post('/urls', (req, res) => {
   const shortURL = generateUniqueKey(6, urlDatabase);
   urlDatabase[shortURL] = {
     shortURL,
-    longURL: validateURL(req.body.longURL),
+    longURL: formatURL(req.body.longURL),
     userID: user.id,
     dateCreated: new Date(),
     visitCount: 0,
     uniqueVisitCount: 0,
+    logs: [],
   };
   res.redirect(`/urls/${shortURL}`);
 });
@@ -166,7 +182,7 @@ app.put('/urls/:shortURL', (req, res) => {
   if (!userOwns) return userDoesNotOwn(req, res);
 
   // Happy
-  const longURL = validateURL(req.body.longURL);
+  const longURL = formatURL(req.body.longURL);
   urlDatabase[shortURL].longURL = longURL;
   res.redirect('/urls');
 });
@@ -255,14 +271,15 @@ app.post('/register', (req, res) => {
 
 app.post('/logout', (req, res) => {
   req.session = null;
-  res.redirect('/'); // @todo requirements change back to /urls
+  res.redirect('/');
 });
 
 //------------------------------------------------------------------------------
 // Start listening
 
 app.listen(port, () => {
-  console.log('------------------------------');
-  console.log(`TinyApp listening on port ${port}`);
-  console.log('------------------------------');
+  console.log(`
+------------------------------
+TinyApp listening on port ${port}
+------------------------------`);
 });

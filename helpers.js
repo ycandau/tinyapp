@@ -2,6 +2,11 @@
 // helpers.js
 //==============================================================================
 
+/**
+ * Generate a random alphanumeric character (digit, lowercase or uppercase).
+ *
+ * @return {string} The random character.
+ */
 const generateRandomChar = () => {
   const n = (Math.random() * 62) >> 0;
   const code =
@@ -11,10 +16,16 @@ const generateRandomChar = () => {
       ? n + 71 // lowercase
       : n < 62
       ? n - 4 // digits
-      : 95; // default, never set
+      : 95; // default, never used
   return String.fromCharCode(code);
 };
 
+/**
+ * Generate a string of random alphanumeric characters.
+ *
+ * @param {number} length The length of the string.
+ * @return {string} The random string.
+ */
 const generateRandomString = (length) => {
   let str = '';
   for (let i = 0; i < length; i++) {
@@ -23,16 +34,37 @@ const generateRandomString = (length) => {
   return str;
 };
 
-const generateUniqueKey = (length, obj) => {
+/**
+ * Generate a unique alphanumeric key based on an existing collection.
+ *
+ * @param {number} length The length of the string.
+ * @param {(set|array|object)} coll The collection of keys to not duplicate.
+ * @return {string} A random string guaranteed to not be in the collection.
+ */
+const generateUniqueKey = (length, coll) => {
+  // Setify arrays and objects
+  const set =
+    coll instanceof Set
+      ? coll
+      : Array.isArray(coll)
+      ? new Set(coll)
+      : new Set(Object.keys(coll));
+
   let key = '';
   do {
     key = generateRandomString(length);
-  } while (key in obj);
+  } while (set.has(coll));
   return key;
 };
 
-// @todo Improve validation with regex?
-const validateURL = (url) => {
+/**
+ * Cleans up an url and prepends http if no protocol is included.
+ * Does not ensure that the url is an actual url.
+ *
+ * @param {string} url The input string for the url.
+ * @return {string} A cleaned up url.
+ */
+const formatURL = (url) => {
   const trimmed = url.trim();
   return trimmed.includes('http') ? trimmed : `http://${trimmed}`;
 };
@@ -78,7 +110,7 @@ const sendError = (code, msg) => (req, res) =>
 
 module.exports = {
   generateUniqueKey,
-  validateURL,
+  formatURL,
   getUserFromCookies,
   getUserByEmail,
   sendError,

@@ -59,13 +59,31 @@
       <hr />
 
       <!-- Analytics -->
+      <h3>Analytics</h3>
+
       <div>Date created: <%= url.dateCreated %></div>
       <div>Number of visits: <%= url.visitCount %></div>
       <div>Number of unique visits: <%= url.uniqueVisitCount %></div>
-
       <hr />
 
-      <h2>Log</h2>
+      <!-- Log -->
+      <h3>Log</h3>
+      <table class="table">
+        <thead>
+          <tr>
+            <th scope="col">Visitor ID</th>
+            <th scope="col">Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% for (const {id, date} of url.logs) { %>
+          <tr>
+            <td><%= id %></td>
+            <td><%= date %></td>
+          </tr>
+          <% } %>
+        </tbody>
+      </table>
     </main>
 
     <!-- Bootstrap JS -->
