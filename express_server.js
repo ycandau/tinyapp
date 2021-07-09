@@ -29,10 +29,10 @@ const visitors = new Set();
 
 // Bad request (400)
 const emptyRegistrationInput = sendError(400, 'Email or password is empty');
-const emailAlreadyRegistered = sendError(400, 'Email already registred');
+const emailAlreadyRegistered = sendError(400, 'Email is already registered');
 
 // Unauthorized (401)
-const emailNotRegistered = sendError(401, 'Email not registered');
+const emailNotRegistered = sendError(401, 'Email is not registered');
 const incorrectPassword = sendError(401, 'Incorrect password');
 const userNotLoggedIn = sendError(401, 'User not logged in');
 
