@@ -13,10 +13,10 @@ const generateRandomChar = () => {
     n < 26
       ? n + 65 // uppercase
       : n < 52
-      ? n + 71 // lowercase
-      : n < 62
-      ? n - 4 // digits
-      : 95; // default, never used
+        ? n + 71 // lowercase
+        : n < 62
+          ? n - 4 // digits
+          : 95; // default, never used
   return String.fromCharCode(code);
 };
 
@@ -47,8 +47,8 @@ const generateUniqueKey = (length, coll) => {
     coll instanceof Set
       ? coll
       : Array.isArray(coll)
-      ? new Set(coll)
-      : new Set(Object.keys(coll));
+        ? new Set(coll)
+        : new Set(Object.keys(coll));
 
   let key = '';
   do {
